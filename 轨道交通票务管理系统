@@ -1,0 +1,49 @@
+import pandas as pd
+
+# 定义列车时刻表类
+class TrainSchedule:
+    def __init__(self):
+        self.train_schedule = {}  # 使用字典存储列车信息，键是列车编号，值是DataFrame
+
+    # 添加列车时刻信息
+    def add_train(self, train_num, departure_time, arrival_time, origin, destination, passenger_count=0):
+        df = {
+            'Train Number': train_num,
+            'Departure Time': departure_time,
+            'Arrival Time': arrival_time,
+            'Origin': origin,
+            'Destination': destination,
+            'Passenger Count': passenger_count
+        }
+        if train_num not in self.train_schedule:
+            self.train_schedule[train_num] = pd.DataFrame(df, index=[0])
+        else:
+            self.train_schedule[train_num] = self.train_schedule[train_num].append(df, ignore_index=True)
+
+    # 查询时刻表信息
+    def get_train_info(self, train_num=None):
+        if train_num is None:
+            return pd.concat(self.train_schedule.values())
+        else:
+            return self.train_schedule.get(train_num, "Train number not found")
+
+    # 统计每个站点的进出乘客
+    def station_passenger_stats(self):
+        stats_df = pd.DataFrame()
+        for _, df in self.train_schedule.items():
+            for station in set(df['Origin'].tolist() + df['Destination'].tolist()):
+                if station not in stats_df.index:
+                    stats_df.loc[station, 'In'] = 0
+                    stats_df.loc[station, 'Out'] = 0
+                stats_df.loc[station, 'In'] += df[df['Origin'] == station]['Passenger Count'].sum()
+                stats_df.loc[station, 'Out'] += df[df['Destination'] == station]['Passenger Count'].sum()
+        return stats_df
+
+# 创建并使用时刻表管理系统的示例
+schedule = TrainSchedule()
+schedule.add_train('T1', '08:00', '09:30', 'A', 'B', 50)
+# ...继续添加更多列车信息...
+print("Train Schedule:")
+print(schedule.get_train_info())
+print("\nStation Passenger Stats:")
+print(schedule.station_passenger_stats())
